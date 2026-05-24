@@ -1,0 +1,79 @@
+{
+  "theme": "dark",
+  "archetype": "5 (Luxury)",
+  "brand": {
+    "name": "Maa Harsiddhi Darbar Foods",
+    "owner": "Lokesh Gorkar",
+    "whatsapp_number": "+919713131389",
+    "type": "Pure Veg Restaurant & Cafe"
+  },
+  "colors": {
+    "background": "#000000",
+    "surface": "#0a0a0a",
+    "surface_glass": "rgba(10, 10, 10, 0.6)",
+    "primary": "#ea580c",
+    "primary_hover": "#c2410c",
+    "text_main": "#ffffff",
+    "text_muted": "#a1a1aa",
+    "border": "rgba(255, 255, 255, 0.1)",
+    "border_highlight": "rgba(234, 88, 12, 0.3)"
+  },
+  "typography": {
+    "font_family_heading": "Cormorant Garamond, serif",
+    "font_family_body": "Outfit, sans-serif",
+    "heading_sizes": {
+      "h1": "text-4xl sm:text-5xl lg:text-7xl tracking-tighter font-light",
+      "h2": "text-3xl sm:text-4xl lg:text-5xl tracking-tight font-light",
+      "h3": "text-xl sm:text-2xl font-normal"
+    },
+    "body_size": "text-base leading-relaxed tracking-wide",
+    "overline": "text-xs tracking-[0.2em] uppercase text-orange-500"
+  },
+  "visual_style": {
+    "glassmorphism": "backdrop-blur-2xl bg-black/60 border border-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]",
+    "cards": "bg-[#050505] border border-white/5 hover:border-orange-500/30 transition-all duration-500",
+    "buttons_primary": "bg-orange-600 hover:bg-orange-700 text-white font-medium tracking-wide transition-all duration-300",
+    "buttons_secondary": "bg-transparent border border-white/20 hover:border-orange-500 text-white transition-all duration-300",
+    "spacing_philosophy": "Generous padding, typically p-8 to p-16 for containers, utilizing negative space to create a luxury feel.",
+    "border_radius": "rounded-none or minimal rounded-sm for a sharp, sophisticated restaurant look."
+  },
+  "components": {
+    "navigation": "Sticky glassmorphism header. Left: Typography Logo, Center: Nav links, Right: Cart icon & Call CTA.",
+    "hero": "100vh full-screen section. Dark luxury restaurant interior background with Parallax scrolling. Black gradient overlay (bg-gradient-to-t from-black via-black/60 to-black/30). Large elegant typography, floating quick-order WhatsApp button.",
+    "menu_section": "Tabs for categories (e.g., Thalis, Starters, Mains, Breads). Minimalist search bar. Grid layout for items. Each item card has a high-quality image, subtle orange price tag, and 'Add to Cart' button.",
+    "cart_drawer_and_checkout": "Glassmorphism slide-over drawer from the right. Lists cart items with +/- controls. Live total. Minimalist checkout form (Name, Phone, Address, Notes) with border-bottom inputs. 'Place Order' button builds a WhatsApp message and redirects.",
+    "gallery": "Bento Grid Mode A (Tetris pattern). Mixed aspect ratios of food and restaurant interior. Images scale slightly on hover.",
+    "reviews": "Smooth auto-scrolling marquee of text reviews. Star ratings in orange.",
+    "contact": "Clean footer-like section with address, WhatsApp number, and subtle map/location details.",
+    "floating_wa": "Fixed bottom-right button, orange circle with WhatsApp icon, continuous subtle pulse animation."
+  },
+  "animations": {
+    "page_transitions": "Use Framer Motion for smooth section-to-section scroll reveals (opacity 0 to 1, y 20 to 0) with a 0.6s ease-out duration.",
+    "scroll_effects": "Lenis for ultra-smooth momentum scrolling. Parallax effects on background images.",
+    "micro_interactions": "Images scale up by 3% on hover. Buttons have a slight background brightness increase. Links feature an underline reveal on hover."
+  },
+  "image_urls": {
+    "hero_background": "https://images.unsplash.com/photo-1680946496238-5272d3c407fc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHwxfHxyZXN0YXVyYW50JTIwaW50ZXJpb3IlMjBkYXJrJTIwbHV4dXJ5fGVufDB8fHx8MTc3OTYzNzY3NHww&ixlib=rb-4.1.0&q=85",
+    "menu_items": [
+      "https://images.pexels.com/photos/36701465/pexels-photo-36701465.jpeg",
+      "https://images.pexels.com/photos/18510834/pexels-photo-18510834.jpeg",
+      "https://images.unsplash.com/photo-1606791422814-b32c705e3e2f?crop=entropy&cs=srgb&fm=jpg"
+    ],
+    "gallery": [
+      "https://images.pexels.com/photos/5701846/pexels-photo-5701846.jpeg",
+      "https://images.unsplash.com/photo-1761095596755-99ba58997720?crop=entropy&cs=srgb&fm=jpg",
+      "https://images.unsplash.com/photo-1773333155314-cbfb5f6d4dba?crop=entropy&cs=srgb&fm=jpg",
+      "https://images.unsplash.com/photo-1776773873159-20f3f190f6bb?crop=entropy&cs=srgb&fm=jpg"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "1. Install required dependencies: framer-motion, lucide-react, react-fast-marquee, @studio-freight/react-lenis.",
+    "2. Setup Tailwind CSS to include the requested color palette (Deep Black, Premium Orange) and fonts (Cormorant Garamond, Outfit).",
+    "3. Implement the Layout with Lenis for smooth scrolling.",
+    "4. Build the Hero Section with a parallax image effect using Framer Motion.",
+    "5. Create a React Context for the Cart System to manage items, quantities, and totals across the Menu and Drawer.",
+    "6. Build the Checkout Form inside the Cart Drawer. On submission, format the order details and user info into a URL-encoded string and trigger window.open(`https://wa.me/9197131389?text=${message}`, '_blank').",
+    "7. Ensure all interactive elements include `data-testid` attributes.",
+    "8. Use the provided image URLs strictly, avoiding any placeholder image services."
+  ]
+}
