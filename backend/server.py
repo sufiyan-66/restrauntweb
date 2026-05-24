@@ -6,7 +6,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
 
@@ -14,59 +14,236 @@ from datetime import datetime, timezone
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
 app = FastAPI()
-
-# Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
+class MenuItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    id: str
+    name: str
+    price: int
+    category: str
+    image: str
+    description: Optional[str] = ""
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class OrderItem(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str
+    name: str
+    price: int
+    quantity: int
 
-# Add your routes to the router instead of directly to app
+
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Maa Harsiddhi Darbar Foods API"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
+@api_router.get("/menu", response_model=List[MenuItem])
+async def get_menu():
+    menu_data = [
+        # CHINESE
+        {"id": "c1", "name": "Chilli Paneer", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_e858e1da-bdd2-451d-9f85-91d60a32606a/artifacts/prxk96wk_photo_2026-05-24%2017.38.06.jpeg"},
+        {"id": "c2", "name": "Paneer 65", "price": 219, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ztvoxn9i_photo_2026-05-24%2017.34.57.jpeg"},
+        {"id": "c3", "name": "Mushroom Chilli", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/nvlu115e_photo_2026-05-24%2017.34.58.jpeg"},
+        {"id": "c4", "name": "Paneer Manchurian", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/6gkksc06_photo_2026-05-24%2017.34.59.jpeg"},
+        {"id": "c5", "name": "Gobi Manchurian", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/b6xxn3qv_photo_2026-05-24%2017.35.00.jpeg"},
+        {"id": "c6", "name": "Veg Manchurian", "price": 239, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/qfbtw8nh_photo_2026-05-24%2019.59.26.jpeg"},
+        {"id": "c7", "name": "Veg Noodles", "price": 239, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/a4xidj2z_photo_2026-05-24%2020.03.56.jpeg"},
+        {"id": "c8", "name": "Paneer Noodles", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/yzw614id_photo_2026-05-24%2020.03.58.jpeg"},
+        {"id": "c9", "name": "Mix Noodles", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/yuhszgql_photo_2026-05-24%2020.04.00.jpeg"},
+        {"id": "c10", "name": "Mushroom Noodles", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/szp3ksgc_photo_2026-05-24%2020.04.01.jpeg"},
+        {"id": "c11", "name": "Hakka Noodles", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/i42b5j9y_photo_2026-05-24%2020.04.02.jpeg"},
+        {"id": "c12", "name": "Veg Singapuri Noodles", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/l1gpxivk_photo_2026-05-24%2020.04.03.jpeg"},
+        {"id": "c13", "name": "Cheese Ball", "price": 239, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/n0624aos_photo_2026-05-24%2020.04.04.jpeg"},
+        {"id": "c14", "name": "Corn Cheese Ball", "price": 229, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/83gtibsu_photo_2026-05-24%2020.04.05.jpeg"},
+        {"id": "c15", "name": "Veg Chopsuey", "price": 239, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/3o0lf0k4_photo_2026-05-24%2020.04.06.jpeg"},
+        {"id": "c16", "name": "American Chopsuey", "price": 269, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ge25is2c_photo_2026-05-24%2020.04.07.jpeg"},
+        {"id": "c17", "name": "Baby Corn Crispy", "price": 239, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/csvib37f_photo_2026-05-24%2020.04.08.jpeg"},
+        {"id": "c18", "name": "Spring Roll", "price": 229, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/74uqefkp_photo_2026-05-24%2020.04.09.jpeg"},
+        {"id": "c19", "name": "Veg Lollipop", "price": 219, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/phzef9aj_photo_2026-05-24%2020.04.10.jpeg"},
+        {"id": "c20", "name": "Veg Kothe", "price": 229, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/qn197nw6_photo_2026-05-24%2020.04.12.jpeg"},
+        {"id": "c21", "name": "Veg Crispy", "price": 199, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/y4t3h3t8_photo_2026-05-24%2020.04.13.jpeg"},
+        {"id": "c22", "name": "Chilli Potato", "price": 219, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/6jezbb0v_photo_2026-05-24%2020.04.15.jpeg"},
+        {"id": "c23", "name": "Honey Chilli Potato", "price": 229, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/xyzc7cha_photo_2026-05-24%2020.04.16.jpeg"},
+        {"id": "c24", "name": "French Fries", "price": 169, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/k4intsnt_photo_2026-05-24%2020.04.17.jpeg"},
+        {"id": "c25", "name": "Crispy Corn", "price": 179, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/zzp3hs00_photo_2026-05-24%2020.04.18.jpeg"},
+        {"id": "c26", "name": "Veg Fried Rice", "price": 189, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/m06agqdl_photo_2026-05-24%2020.04.20.jpeg"},
+        {"id": "c27", "name": "Panner Fried Rice", "price": 199, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/5sf43ttk_photo_2026-05-24%2020.04.21.jpeg"},
+        {"id": "c28", "name": "Schezwan Fried Rice", "price": 219, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ndn986qf_photo_2026-05-24%2020.04.23.jpeg"},
+        {"id": "c29", "name": "Triple Fried Rice", "price": 239, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/dy9gonfi_photo_2026-05-24%2020.04.24.jpeg"},
+        {"id": "c30", "name": "Mix Fried Rice", "price": 249, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ujoyjvpx_photo_2026-05-24%2020.04.26.jpeg"},
+        {"id": "c31", "name": "Mushroom Fried Rice", "price": 219, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/hy30ho3v_photo_2026-05-24%2020.04.27.jpeg"},
+        {"id": "c32", "name": "Red Sauce Pasta", "price": 199, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/9rccfgy0_photo_2026-05-24%2020.04.28.jpeg"},
+        {"id": "c33", "name": "White Sauce Pasta", "price": 199, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ij9g4nq8_photo_2026-05-24%2020.04.29.jpeg"},
+        {"id": "c34", "name": "Chinese Platter", "price": 319, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/b49hof7w_photo_2026-05-24%2020.04.31.jpeg"},
+        {"id": "c35", "name": "Chana Chilli", "price": 199, "category": "Chinese", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/yf9h0hop_photo_2026-05-24%2020.04.32.jpeg"},
+        
+        # MAIN COURSE
+        {"id": "m1", "name": "Shahi Paneer", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/be3z3nth_photo_2026-05-24%2020.12.14.jpeg"},
+        {"id": "m2", "name": "Paneer Angara", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ccboac5v_photo_2026-05-24%2020.12.16.jpeg"},
+        {"id": "m3", "name": "Butter Paneer Masala", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/agh9c9e9_photo_2026-05-24%2020.12.17.jpeg"},
+        {"id": "m4", "name": "Matar Paneer", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/njqsgw3r_photo_2026-05-24%2020.12.18.jpeg"},
+        {"id": "m5", "name": "Kaju Paneer", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/8gzrjet2_photo_2026-05-24%2020.12.20.jpeg"},
+        {"id": "m6", "name": "Palak Paneer", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/0gtbsxca_photo_2026-05-24%2020.12.22.jpeg"},
+        {"id": "m7", "name": "Kadhai Paneer", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/duz4n89h_photo_2026-05-24%2020.12.24.jpeg"},
+        {"id": "m8", "name": "Paneer Tikka Masala", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/wybskjc5_photo_2026-05-24%2020.12.28.jpeg"},
+        {"id": "m9", "name": "Paneer Pasanda", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/iuvct2s0_photo_2026-05-24%2020.12.30.jpeg"},
+        {"id": "m10", "name": "Paneer Lababdar", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ju7png61_photo_2026-05-24%2020.12.31.jpeg"},
+        {"id": "m11", "name": "Paneer Takatak", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ufylizai_photo_2026-05-24%2020.12.33.jpeg"},
+        {"id": "m12", "name": "Paneer Kofta", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/zjil1bq7_photo_2026-05-24%2020.12.34.jpeg"},
+        {"id": "m13", "name": "Malai Kofta", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/dgngnklz_photo_2026-05-24%2020.12.35.jpeg"},
+        {"id": "m14", "name": "Nargis Kofta", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/02ckbblr_photo_2026-05-24%2020.12.37.jpeg"},
+        {"id": "m15", "name": "Veg Chatpta Kofta", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/62jbcpui_photo_2026-05-24%2020.12.38.jpeg"},
+        {"id": "m16", "name": "Paneer Do Pyaza", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/m6rrjkm1_photo_2026-05-24%2020.12.40.jpeg"},
+        {"id": "m17", "name": "Paneer Makhan Wala", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/jtzfu1aw_photo_2026-05-24%2020.12.41.jpeg"},
+        {"id": "m18", "name": "Paneer Handi", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/t8zyqqjp_photo_2026-05-24%2020.12.44.jpeg"},
+        {"id": "m19", "name": "Kaju Curry", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/1b59oxg3_photo_2026-05-24%2020.12.46.jpeg"},
+        {"id": "m20", "name": "Kaju Masala", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/r4jtj67q_photo_2026-05-24%2020.12.47.jpeg"},
+        {"id": "m21", "name": "Mushroom Kaju", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/dqkmudjw_photo_2026-05-24%2020.12.48.jpeg"},
+        {"id": "m22", "name": "Mushroom Masala", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/xzktuq5l_photo_2026-05-24%2020.12.49.jpeg"},
+        {"id": "m23", "name": "Kadhai Mushroom", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/hiswv386_photo_2026-05-24%2020.12.51.jpeg"},
+        {"id": "m24", "name": "Mushroom Do Pyaza", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/0e7yg2wg_photo_2026-05-24%2020.12.52.jpeg"},
+        {"id": "m25", "name": "Sev Tamatar", "price": 199, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ccs68k7f_photo_2026-05-24%2020.12.53.jpeg"},
+        {"id": "m26", "name": "Dudh Sev", "price": 219, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ct0zzeqj_photo_2026-05-24%2020.12.54.jpeg"},
+        {"id": "m27", "name": "Darbar Special", "price": 319, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/e5ehqx7x_photo_2026-05-24%2020.12.55.jpeg"},
+        {"id": "m28", "name": "Paneer Kaleji", "price": 269, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/i4c2udrx_photo_2026-05-24%2020.12.56.jpeg"},
+        {"id": "m29", "name": "Paneer Lahori", "price": 259, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/iboteh3k_photo_2026-05-24%2020.12.57.jpeg"},
+        {"id": "m30", "name": "Paneer Kolhapuri", "price": 240, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/rpp4q3lt_photo_2026-05-24%2020.12.58.jpeg"},
+        {"id": "m31", "name": "Tawa Paneer", "price": 255, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/n9x68pte_photo_2026-05-24%2020.12.59.jpeg"},
+        {"id": "m32", "name": "Paneer Bhurji", "price": 269, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/dg5ufi0w_photo_2026-05-24%2020.13.00.jpeg"},
+        {"id": "m33", "name": "Veg Anda Curry", "price": 279, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/26w5c0f6_photo_2026-05-24%2020.09.24.jpeg"},
+        {"id": "m34", "name": "Veg Jal Fregy", "price": 249, "category": "Main Course", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/npg5pl2k_photo_2026-05-24%2020.04.34.jpeg"},
+        {"id": "m35", "name": "Paneer Korma", "price": 249, "category": "Main Course", "image": "https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=400"},
+        
+        # BREADS
+        {"id": "b1", "name": "Tandoori Plain Roti", "price": 12, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/rfgndnn6_photo_2026-05-24%2020.22.12.jpeg"},
+        {"id": "b2", "name": "Tandoori Butter Roti", "price": 15, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ehb22y3h_photo_2026-05-24%2020.22.17.jpeg"},
+        {"id": "b3", "name": "Tawa Roti Plain", "price": 12, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/u3pdetfj_photo_2026-05-24%2020.22.25.jpeg"},
+        {"id": "b4", "name": "Tawa Roti Butter", "price": 15, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/m2b30vc3_photo_2026-05-24%2020.22.28.jpeg"},
+        {"id": "b5", "name": "Missi Roti", "price": 35, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/y1t5azpg_photo_2026-05-24%2020.22.29.jpeg"},
+        {"id": "b6", "name": "Makka Roti", "price": 39, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/h00fhuwi_photo_2026-05-24%2020.22.30.jpeg"},
+        {"id": "b7", "name": "Naan Plain", "price": 39, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/lodhlwah_photo_2026-05-24%2020.22.35.jpeg"},
+        {"id": "b8", "name": "Butter Naan", "price": 39, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/kz76823s_photo_2026-05-24%2020.22.36.jpeg"},
+        {"id": "b9", "name": "Garlic Naan", "price": 49, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/mhl8iu1l_photo_2026-05-24%2020.22.38.jpeg"},
+        {"id": "b10", "name": "Cheese Naan", "price": 59, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/43zmxy5p_photo_2026-05-24%2020.22.40.jpeg"},
+        {"id": "b11", "name": "Cheese Chilli Garlic Naan", "price": 69, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/h54i0cp2_photo_2026-05-24%2020.22.44.jpeg"},
+        {"id": "b12", "name": "Stuff Naan", "price": 69, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/vuewrot5_photo_2026-05-24%2020.22.47.jpeg"},
+        {"id": "b13", "name": "Paneer Naan", "price": 69, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/beg2adf7_photo_2026-05-24%2020.22.49.jpeg"},
+        {"id": "b14", "name": "Butter Kulcha", "price": 39, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ny9z5wih_photo_2026-05-24%2020.22.51.jpeg"},
+        {"id": "b15", "name": "Plain Kulcha", "price": 39, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/wu4uxzs1_photo_2026-05-24%2020.22.54.jpeg"},
+        {"id": "b16", "name": "Stuff Kulcha", "price": 59, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/muz9ib1i_photo_2026-05-24%2020.22.56.jpeg"},
+        {"id": "b17", "name": "Laccha Paratha", "price": 39, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/2e7c6kcw_photo_2026-05-24%2020.22.59.jpeg"},
+        {"id": "b18", "name": "Plain Paratha", "price": 29, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/wtq3dqv9_photo_2026-05-24%2020.23.00.jpeg"},
+        {"id": "b19", "name": "Aalu Paratha", "price": 59, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/592bhmcz_photo_2026-05-24%2020.23.02.jpeg"},
+        {"id": "b20", "name": "Pyaz Paratha", "price": 59, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/kesbc5ej_photo_2026-05-24%2020.23.05.jpeg"},
+        {"id": "b21", "name": "Gobi Paratha", "price": 59, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/6ry5kf0n_photo_2026-05-24%2020.23.07.jpeg"},
+        {"id": "b22", "name": "Sev Paratha", "price": 59, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/hdiq7znu_photo_2026-05-24%2020.23.08.jpeg"},
+        {"id": "b23", "name": "Paneer Paratha", "price": 59, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/0r1t0d60_photo_2026-05-24%2020.23.10.jpeg"},
+        {"id": "b24", "name": "Cheese Paratha", "price": 69, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/zduogiko_photo_2026-05-24%2020.23.11.jpeg"},
+        {"id": "b25", "name": "Methi Paratha", "price": 59, "category": "Breads", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/kws1eipa_photo_2026-05-24%2020.23.12.jpeg"},
+        
+        # CURD
+        {"id": "cu1", "name": "Plain Curd", "price": 69, "category": "Curd", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/x3nfd1gi_photo_2026-05-24%2020.28.01.jpeg"},
+        {"id": "cu2", "name": "Curd Tadka", "price": 79, "category": "Curd", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/3dedos7v_photo_2026-05-24%2020.28.03.jpeg"},
+        {"id": "cu3", "name": "Bundi Raita", "price": 109, "category": "Curd", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/18gcvelx_photo_2026-05-24%2020.28.13.jpeg"},
+        {"id": "cu4", "name": "Veg Raita", "price": 99, "category": "Curd", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/2cl27i0v_photo_2026-05-24%2020.28.18.jpeg"},
+        {"id": "cu5", "name": "Fruit Raita", "price": 119, "category": "Curd", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/nxzug8by_photo_2026-05-24%2020.28.23.jpeg"},
+        {"id": "cu6", "name": "Pineapple Raita", "price": 129, "category": "Curd", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/jyv0q9lc_photo_2026-05-24%2020.28.26.jpeg"},
+        {"id": "cu7", "name": "Mix Raita Dry Fruit", "price": 139, "category": "Curd", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/90rgizy0_photo_2026-05-24%2020.28.30.jpeg"},
+        
+        # GREEN VEGETABLE
+        {"id": "gv1", "name": "Mava Matar", "price": 249, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/vfvcii6s_photo_2026-05-24%2020.30.57.jpeg"},
+        {"id": "gv2", "name": "Malai Methi Matar", "price": 259, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/q33h25a8_photo_2026-05-24%2020.31.07.jpeg"},
+        {"id": "gv3", "name": "Jeera Aalu", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/aco0v1eo_photo_2026-05-24%2020.31.14.jpeg"},
+        {"id": "gv4", "name": "Mixveg", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/7eoyuqkn_photo_2026-05-24%2020.31.17.jpeg"},
+        {"id": "gv5", "name": "Veg Kolhapuri", "price": 229, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/qrckwal1_photo_2026-05-24%2020.31.19.jpeg"},
+        {"id": "gv6", "name": "Bhindi Masala", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/9kvfblaa_photo_2026-05-24%2020.31.21.jpeg"},
+        {"id": "gv7", "name": "Kurkuri Bhindi", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/9u1f118t_photo_2026-05-24%2020.31.23.jpeg"},
+        {"id": "gv8", "name": "Aalu Methi", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/19x5sh6u_photo_2026-05-24%2020.31.24.jpeg"},
+        {"id": "gv9", "name": "Aalu Gobhi", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/iz1aw198_photo_2026-05-24%2020.31.27.jpeg"},
+        {"id": "gv10", "name": "Gobhi Masala", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/bcp4m0jz_photo_2026-05-24%2020.35.08.jpeg"},
+        {"id": "gv11", "name": "Dum Aalu", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ntsjsusc_photo_2026-05-24%2020.35.13.jpeg"},
+        {"id": "gv12", "name": "Dum Aalu Kashmiri", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/s6tjrq4o_photo_2026-05-24%2020.35.21.jpeg"},
+        {"id": "gv13", "name": "Chana Masala", "price": 189, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/s69nh8s2_photo_2026-05-24%2020.35.27.jpeg"},
+        {"id": "gv14", "name": "Lahsuni Palak Matar", "price": 199, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/tr79e67k_photo_2026-05-24%2020.35.30.jpeg"},
+        {"id": "gv15", "name": "Aalu Palak", "price": 189, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/g1ybufyf_photo_2026-05-24%2020.35.33.jpeg"},
+        {"id": "gv16", "name": "Stuff Tomato", "price": 219, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/6t2cijmv_photo_2026-05-24%2020.35.56.jpeg"},
+        {"id": "gv17", "name": "Stuff Shimla", "price": 219, "category": "Green Vegetable", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/w355jybr_photo_2026-05-24%2020.35.58.jpeg"},
+        
+        # TANDOOR STARTER
+        {"id": "t1", "name": "Paneer Tikka", "price": 259, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/3nl88ack_photo_2026-05-24%2020.44.05.jpeg"},
+        {"id": "t2", "name": "Paneer Achari Tikka", "price": 259, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/rwdsj5fg_photo_2026-05-24%2020.44.07.jpeg"},
+        {"id": "t3", "name": "Paneer Kali Mirch Tikka", "price": 269, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/fdt1x6f3_photo_2026-05-24%2020.44.16.jpeg"},
+        {"id": "t4", "name": "Panner Malai Tikka", "price": 279, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/difpzqxg_photo_2026-05-24%2020.44.23.jpeg"},
+        {"id": "t5", "name": "Paneer Banjara Tikka", "price": 259, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/clgwv37b_photo_2026-05-24%2020.44.25.jpeg"},
+        {"id": "t6", "name": "Soya Chaap", "price": 239, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/kc8bydmx_photo_2026-05-24%2020.44.28.jpeg"},
+        {"id": "t7", "name": "Malai Soya Chaap", "price": 269, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/8qypvg6z_photo_2026-05-24%2020.44.32.jpeg"},
+        {"id": "t8", "name": "Veg Seekh Kababa", "price": 229, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/sm0y558u_photo_2026-05-24%2020.44.39.jpeg"},
+        {"id": "t9", "name": "Corn Seekh Kabab", "price": 219, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/gpkmo7tt_photo_2026-05-24%2020.44.41.jpeg"},
+        {"id": "t10", "name": "Hara Bhara Kabab", "price": 199, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/a0m44q1l_photo_2026-05-24%2020.44.42.jpeg"},
+        {"id": "t11", "name": "Dahi Ke Kabab", "price": 219, "category": "Tandoor Starter", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/fuarzpfq_photo_2026-05-24%2020.44.44.jpeg"},
+        {"id": "t12", "name": "Tandoori Platter", "price": 299, "category": "Tandoor Starter", "image": "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=400"},
+        
+        # DAL
+        {"id": "d1", "name": "Dal Fry", "price": 149, "category": "Dal", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/zdmzocz4_photo_2026-05-24%2021.03.56.jpeg"},
+        {"id": "d2", "name": "Dal Tadka", "price": 159, "category": "Dal", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/opitwchh_photo_2026-05-24%2021.04.01.jpeg"},
+        {"id": "d3", "name": "Jeera Dal", "price": 149, "category": "Dal", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/m093ac71_photo_2026-05-24%2021.04.04.jpeg"},
+        {"id": "d4", "name": "Dal Punjabi", "price": 169, "category": "Dal", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/m4rcudjh_photo_2026-05-24%2021.04.10.jpeg"},
+        {"id": "d5", "name": "Dal Makhni", "price": 189, "category": "Dal", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/68ohmjtu_photo_2026-05-24%2021.04.16.jpeg"},
+        {"id": "d6", "name": "Dal Gujrati (Khatti Mithi)", "price": 159, "category": "Dal", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/m9tr7hx7_photo_2026-05-24%2021.04.19.jpeg"},
+        
+        # SALAD
+        {"id": "s1", "name": "Onion Salad", "price": 19, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/0zo51u35_photo_2026-05-24%2021.06.06.jpeg"},
+        {"id": "s2", "name": "Green Salad", "price": 69, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/0p237q8i_photo_2026-05-24%2021.06.07.jpeg"},
+        {"id": "s3", "name": "Kachumbar Salad", "price": 49, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/fva18lxc_photo_2026-05-24%2021.06.08.jpeg"},
+        {"id": "s4", "name": "Masala Papad", "price": 29, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/tigzp7e8_photo_2026-05-24%2021.06.09.jpeg"},
+        {"id": "s5", "name": "Dry Papad", "price": 19, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/t6k3hac2_photo_2026-05-24%2021.06.09%20%281%29.jpeg"},
+        {"id": "s6", "name": "Fry Papad", "price": 29, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/r0ecqlv8_photo_2026-05-24%2021.06.10.jpeg"},
+        {"id": "s7", "name": "Butter Milk", "price": 29, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/t3peohhx_photo_2026-05-24%2021.06.11.jpeg"},
+        {"id": "s8", "name": "Lassi", "price": 29, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/9w7se0wg_photo_2026-05-24%2021.06.12.jpeg"},
+        {"id": "s9", "name": "Mineral Water", "price": 20, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/21rwn4mm_photo_2026-05-24%2021.06.13.jpeg"},
+        {"id": "s10", "name": "Cold Drink", "price": 20, "category": "Salad", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/zuqxrqut_photo_2026-05-24%2021.06.14.jpeg"},
+        
+        # RICE
+        {"id": "r1", "name": "Plain Rice", "price": 129, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/bfevlc40_photo_2026-05-24%2021.09.07.jpeg"},
+        {"id": "r2", "name": "Jeera Rice", "price": 149, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/e7nkvq3m_photo_2026-05-24%2021.09.09.jpeg"},
+        {"id": "r3", "name": "Hyderabadi Biryani", "price": 169, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/oceim7ln_photo_2026-05-24%2021.09.10.jpeg"},
+        {"id": "r4", "name": "Dum Biryani", "price": 179, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/aggcuegn_photo_2026-05-24%2021.09.12.jpeg"},
+        {"id": "r5", "name": "Veg Pulav", "price": 169, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/cy72at7c_photo_2026-05-24%2021.09.14.jpeg"},
+        {"id": "r6", "name": "Kashmiri Pulav", "price": 179, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ih6b1mra_photo_2026-05-24%2021.09.18.jpeg"},
+        {"id": "r7", "name": "Matar Pulav", "price": 179, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/hslqm1po_photo_2026-05-24%2021.09.19%20%281%29.jpeg"},
+        {"id": "r8", "name": "Masala Rice", "price": 149, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/4edhl670_photo_2026-05-24%2021.10.54.jpeg"},
+        {"id": "r9", "name": "Butter Khichdi", "price": 169, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/du4km5fk_photo_2026-05-24%2021.11.01.jpeg"},
+        {"id": "r10", "name": "Curd Rice", "price": 149, "category": "Rice", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/h9y530yn_photo_2026-05-24%2020.35.59.jpeg"},
+        
+        # DESSERT
+        {"id": "de1", "name": "Rasgulla", "price": 49, "category": "Dessert", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/bvsavxoo_photo_2026-05-24%2020.48.40.jpeg"},
+        {"id": "de2", "name": "Gulab Jamun", "price": 59, "category": "Dessert", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/2sj6670c_photo_2026-05-24%2020.48.42.jpeg"},
+        
+        # COMBO
+        {"id": "co1", "name": "2 Pc Aalu Paratha With Curd", "price": 159, "category": "Combo", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/se5d3smu_photo_2026-05-24%2020.40.30.jpeg"},
+        {"id": "co2", "name": "4 Pc Puri Bhaji With Sweet", "price": 179, "category": "Combo", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/jeyyjyin_photo_2026-05-24%2020.40.37.jpeg"},
+        {"id": "co3", "name": "Shahi Panner Rice Bowl", "price": 229, "category": "Combo", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/o6gj6t5m_photo_2026-05-24%2020.40.40.jpeg"},
+        {"id": "co4", "name": "Chole Bhature", "price": 259, "category": "Combo", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/lifvnoio_photo_2026-05-24%2020.41.21.jpeg"},
+        {"id": "co5", "name": "Chole Kulche", "price": 269, "category": "Combo", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/7ussqogf_photo_2026-05-24%2020.41.23.jpeg"},
+        {"id": "co6", "name": "Chilli Paneer & Fried Rice", "price": 189, "category": "Combo", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/wyrrt7zl_photo_2026-05-24%2020.41.34.jpeg"},
+        {"id": "co7", "name": "Manchurian & Fried Rice", "price": 189, "category": "Combo", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/oaxi6gm2_photo_2026-05-24%2020.41.35.jpeg"},
+        {"id": "co8", "name": "Manchurian & Noodles", "price": 189, "category": "Combo", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/ad0t8c09_photo_2026-05-24%2020.41.37.jpeg"},
+        
+        # THALI
+        {"id": "th1", "name": "Special Thali", "price": 239, "category": "Thali", "image": "https://customer-assets.emergentagent.com/job_luxury-veg-eats-1/artifacts/v8l0niyq_photo_2026-05-24%2021.13.19.jpeg"}
+    ]
+    return menu_data
 
-# Include the router in the main app
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -77,7 +254,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
